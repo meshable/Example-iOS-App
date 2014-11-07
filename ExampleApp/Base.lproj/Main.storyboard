@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="14A388a" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6250" systemVersion="14B17" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="BYZ-38-t0r">
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6244"/>
     </dependencies>
@@ -16,8 +16,8 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Let's Mesh it up!" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UZG-C5-eYv">
-                                <rect key="frame" x="236" y="106" width="128" height="21"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Meshable Demo" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UZG-C5-eYv">
+                                <rect key="frame" x="236" y="28" width="128" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
@@ -34,7 +34,7 @@
                                     <action selector="sendMessageButton" destination="BYZ-38-t0r" eventType="touchUpInside" id="LZo-9N-yrU"/>
                                 </connections>
                             </button>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="cTm-Lu-2WZ">
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter a message..." minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="cTm-Lu-2WZ">
                                 <rect key="frame" x="195" y="180" width="211" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="211" id="eNe-v5-b8m"/>
@@ -45,8 +45,18 @@
                                     <outlet property="delegate" destination="BYZ-38-t0r" id="9br-hk-krm"/>
                                 </connections>
                             </textField>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Pn-vA-7Ho">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Pn-vA-7Ho">
                                 <rect key="frame" x="168" y="38" width="264" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GNv-ha-rDG">
+                                <rect key="frame" x="121" y="79" width="359" height="62"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="359" id="HWC-1m-Mrf"/>
+                                    <constraint firstAttribute="height" constant="62" id="kGL-am-3DN"/>
+                                </constraints>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
@@ -54,15 +64,19 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstItem="cTm-Lu-2WZ" firstAttribute="top" secondItem="GNv-ha-rDG" secondAttribute="bottom" constant="39" id="1Sy-6f-GbY"/>
                             <constraint firstAttribute="centerX" secondItem="UZG-C5-eYv" secondAttribute="centerX" id="CgQ-QI-tx6"/>
-                            <constraint firstItem="uBp-4c-aAn" firstAttribute="top" secondItem="UZG-C5-eYv" secondAttribute="bottom" constant="137" id="EDw-Ve-32l"/>
+                            <constraint firstAttribute="centerX" secondItem="GNv-ha-rDG" secondAttribute="centerX" id="D4C-UD-XNW"/>
+                            <constraint firstItem="uBp-4c-aAn" firstAttribute="top" secondItem="UZG-C5-eYv" secondAttribute="bottom" constant="215" id="EDw-Ve-32l"/>
                             <constraint firstAttribute="centerX" secondItem="uBp-4c-aAn" secondAttribute="centerX" id="FSw-Qn-ogY"/>
-                            <constraint firstItem="cTm-Lu-2WZ" firstAttribute="top" secondItem="UZG-C5-eYv" secondAttribute="bottom" constant="53" id="Qm8-OH-Vgm"/>
-                            <constraint firstItem="UZG-C5-eYv" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="86" id="n0R-ra-HI5"/>
+                            <constraint firstItem="cTm-Lu-2WZ" firstAttribute="top" secondItem="UZG-C5-eYv" secondAttribute="bottom" constant="131" id="Qm8-OH-Vgm"/>
+                            <constraint firstItem="UZG-C5-eYv" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="8" id="n0R-ra-HI5"/>
                             <constraint firstAttribute="centerX" secondItem="cTm-Lu-2WZ" secondAttribute="centerX" id="ozu-QG-Qw0"/>
+                            <constraint firstItem="GNv-ha-rDG" firstAttribute="top" secondItem="5Pn-vA-7Ho" secondAttribute="bottom" constant="20" id="p9u-Kb-6zd"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="messageDisplay" destination="GNv-ha-rDG" id="tl0-hV-y15"/>
                         <outlet property="messageInputField" destination="cTm-Lu-2WZ" id="tX2-jL-r3F"/>
                     </connections>
                 </viewController>

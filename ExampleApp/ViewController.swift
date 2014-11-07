@@ -9,15 +9,19 @@
 import UIKit
 import CoreBluetooth
 
-class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDelegate, CBPeripheralManagerDelegate {
+
+class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
     var central = CBCentralManager()
     var peripheral = CBPeripheralManager()
     var characterstic = CBMutableCharacteristic()
     var service = CBMutableService()
-    let uuid = CBUUID(string: "180D")
+    var discoveredPeripheral:CBPeripheral?
+    let uuid = CBUUID(string: "CF4A6676-F75D-47F0-861C-767CFBE35466")
     
     
     @IBOutlet var messageInputField: UITextField!
+    @IBOutlet var messageDisplay: UILabel!
+    
     @IBAction func sendMessageButton() {
         sendMessage(messageInputField.text)
     }
@@ -31,7 +35,11 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
             }
         }
         
-        NSLog("%@", message)
+        messageDisplay.text = message
+        var messageBuffer = message.dataUsingEncoding(NSUTF8StringEncoding)
+        characterstic.value = messageBuffer
+        peripheral.updateValue(messageBuffer, forCharacteristic: characterstic, onSubscribedCentrals: nil)
+        
     }
     
     func textFieldShouldReturn(textField: UITextField) -> Bool {
@@ -92,12 +100,23 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
     }
     
     func centralManager(central: CBCentralManager!, didDiscoverPeripheral peripheral: CBPeripheral!, advertisementData: [NSObject : AnyObject]!, RSSI: NSNumber!) {
-        NSLog("Discovered a peripheral: %@", peripheral)
+        println("Discovered a peripheral")
         
-        if peripheral.services != nil {
-            println("Found some services on the peripheral")
-            println(peripheral.services.count)
-        }
+        //Seems we need to retain the discovered peripheral to successfully connect to it
+        self.discoveredPeripheral = peripheral
+        
+//        central.connectPeripheral(peripheral, options: nil)
+//        println("Attempting to cnnect to peripheral")
+    }
+    
+    func centralManager(central: CBCentralManager!, didConnectPeripheral peripheral: CBPeripheral!) {
+        NSLog("Connected to a peripheral: %@", peripheral)
+        peripheral.delegate = self
+        peripheral.discoverServices([uuid])
+    }
+    
+    func centralManager(central: CBCentralManager!, didFailToConnectPeripheral peripheral: CBPeripheral!, error: NSError!) {
+        NSLog("Failed to connect to peripheral %@", error)
     }
     
     // MARK: Peripheral Manager
@@ -156,6 +175,42 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
         }
         
         NSLog("Service added: %@", service)
+    }
+    
+    func peripheralManager(peripheral: CBPeripheralManager!, didReceiveReadRequest request: CBATTRequest!) {
+        NSLog("They wants to read me %@", characterstic)
+        if request.characteristic.UUID == characterstic.UUID {
+            if request.offset > characterstic.value.length {
+                return peripheral.respondToRequest(request, withResult: CBATTError.InvalidOffset)
+            } else {
+                request.value = characterstic.value.subdataWithRange(NSMakeRange(request.offset, characterstic.value.length - request.offset))
+                
+                peripheral.respondToRequest(request, withResult: CBATTError.Success)
+            }
+        }
+    }
+    
+    // MARK: Peripheral Delegate
+    func peripheral(peripheral: CBPeripheral!, didDiscoverServices error: NSError!) {
+        for service in peripheral.services {
+            peripheral.discoverCharacteristics([uuid], forService: service as CBService)
+        }
+    }
+    
+    func peripheral(peripheral: CBPeripheral!, didDiscoverCharacteristicsForService service: CBService!, error: NSError!) {
+        println("Found us some characteristics")
+        
+        for characterstic in service.characteristics {
+            peripheral.readValueForCharacteristic(characterstic as CBCharacteristic)
+        }
+    }
+    
+    func peripheral(peripheral: CBPeripheral!, didUpdateValueForCharacteristic characteristic: CBCharacteristic!, error: NSError!) {
+        if error != nil {
+            NSLog("Had an error while trying to read value on characteristic %@", error)
+        } else {
+            NSLog("Read value on characteristic %@", characterstic)
+        }
     }
 }
 
