@@ -15,16 +15,73 @@ protocol MeshableDeviceDelegate {
 }
 
 class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
-    var central: CBCentralManager
+    var central = CBCentralManager()
+    var peripheral = CBPeripheralManager()
+    var services: [CBService] = []
     var delegate: MeshableDeviceDelegate?
+    var discoveredPeripherals: [CBPeripheral] = []
+    var whitelistedUUIDs: [CBUUID] = []
+    
+    // TODO: meshable json data needs to be sent in by init
+    let jsonDictionary = [
+        "services": [[
+            "UUID": "CF4A6676-F75D-47F0-861C-767CFBE35466",
+            "meshableType": "MeshableNodeService",
+            "meshableDescription": "Encapsulating service to hold Mesh and Application characteristics",
+            "characteristics": [[
+                "UUID": "8D919FA1-5A2B-49AD-A617-F9BE246AAFAC",
+                "meshableType": "MeshId",
+                "meshableDescription": "ID of the mesh network this node belongs to, if any"
+                ], [
+                    "UUID": "27B041F2-2E81-44B9-A096-1A6ECB8A49B1",
+                    "meshableType": "Id",
+                    "meshableDescription": "128-bit id for this node in the network"
+                ], [
+                    "UUID": "2237D243-8105-4390-89CB-2C3B9986CD76",
+                    "meshableType": "Pipe",
+                    "meshableDescription": "Interface for reading/writing data to a node"
+                ]]
+            ]]
+    ]
     
     override init() {
+        if let jsonServices = jsonDictionary["services"] {
+            for jsonService in jsonServices {
+                let serviceUUID = CBUUID(string: jsonService["UUID"] as String)
+                let service = CBMutableService(type: serviceUUID, primary: true)
+                var characteristics: [CBMutableCharacteristic] = []
+                
+                if let jsonCharacteristics = jsonService["characteristics"] as? [[String: String]] {
+                    for jsonCharacteristic in jsonCharacteristics {
+                        let characteristicUUID = CBUUID(string: jsonCharacteristic["UUID"])
+                        let characteristic = CBMutableCharacteristic(type: characteristicUUID, properties: CBCharacteristicProperties.Read | CBCharacteristicProperties.Write | CBCharacteristicProperties.Indicate, value: nil, permissions: CBAttributePermissions.Readable | CBAttributePermissions.Writeable)
+                        characteristics.append(characteristic)
+                    }
+                }
+                
+                service.characteristics = characteristics
+                self.services.append(service)
+            }
+        }
+        
         super.init()
+        
+    }
+    
+    func addCharacteristic(uuid: CBUUID, withValue value: AnyObject) {
+
     }
     
     // MARK: Central Manager
-    func startScanning(uuids: [CBUUID]) {
-        central.scanForPeripheralsWithServices(uuids, options: nil)
+    func startScanning(uuids: [CBUUID]?) {
+        if let maybeUUIDs = uuids {
+            self.whitelistedUUIDs = maybeUUIDs
+        }
+        
+        central = CBCentralManager(delegate: self, queue: nil)
+        peripheral = CBPeripheralManager(delegate: self, queue: nil)
+        
+        central.scanForPeripheralsWithServices(self.whitelistedUUIDs, options: nil)
     }
     
     // MARK: Central Manager Delegate
@@ -64,7 +121,7 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
         println("Discovered a peripheral")
         
         //Seems we need to retain the discovered peripheral to successfully connect to it
-        self.discoveredPeripheral.append(peripheral)
+        self.discoveredPeripherals.append(peripheral)
         
         //        central.connectPeripheral(peripheral, options: nil)
         //        println("Attempting to cnnect to peripheral")
@@ -73,7 +130,7 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
     func centralManager(central: CBCentralManager!, didConnectPeripheral peripheral: CBPeripheral!) {
         NSLog("Connected to a peripheral: %@", peripheral)
         peripheral.delegate = self
-        peripheral.discoverServices([uuid])
+        peripheral.discoverServices(self.whitelistedUUIDs)
     }
     
     func centralManager(central: CBCentralManager!, didFailToConnectPeripheral peripheral: CBPeripheral!, error: NSError!) {
@@ -82,15 +139,7 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
     
     // MARK: Peripheral Manager
     func startAdvertising() {
-        characterstic = CBMutableCharacteristic(type: uuid, properties: CBCharacteristicProperties.Write | CBCharacteristicProperties.Read | CBCharacteristicProperties.Indicate, value: nil, permissions: CBAttributePermissions.Readable | CBAttributePermissions.Writeable)
-        
-        service = CBMutableService(type: uuid, primary: true)
-        
-        service.characteristics = [characterstic]
-        
-        peripheral.addService(service)
-        
-        peripheral.startAdvertising([CBAdvertisementDataServiceUUIDsKey : [service.UUID]])
+        peripheral.startAdvertising([CBAdvertisementDataServiceUUIDsKey : services.map({ $0.UUID })])
     }
     
     // MARK: Peripheral Manager Delegate
@@ -139,12 +188,22 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
     }
     
     func peripheralManager(peripheral: CBPeripheralManager!, didReceiveReadRequest request: CBATTRequest!) {
-        NSLog("They wants to read me %@", characterstic)
-        if request.characteristic.UUID == characterstic.UUID {
-            if request.offset > characterstic.value.length {
+        var characteristic: CBCharacteristic?
+        
+        for service in services {
+            for maybeCharacteristic in service.characteristics as [CBCharacteristic] {
+                if maybeCharacteristic.UUID.UUIDString == request.characteristic.UUID.UUIDString {
+                    characteristic = maybeCharacteristic
+                    break
+                }
+            }
+        }
+        
+        if let foundCharacteristic = characteristic {
+            if request.offset > foundCharacteristic.value.length {
                 return peripheral.respondToRequest(request, withResult: CBATTError.InvalidOffset)
             } else {
-                request.value = characterstic.value.subdataWithRange(NSMakeRange(request.offset, characterstic.value.length - request.offset))
+                request.value = foundCharacteristic.value.subdataWithRange(NSMakeRange(request.offset, foundCharacteristic.value.length - request.offset))
                 
                 peripheral.respondToRequest(request, withResult: CBATTError.Success)
             }
@@ -154,7 +213,7 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
     // MARK: Peripheral Delegate
     func peripheral(peripheral: CBPeripheral!, didDiscoverServices error: NSError!) {
         for service in peripheral.services {
-            peripheral.discoverCharacteristics([uuid], forService: service as CBService)
+            peripheral.discoverCharacteristics(whitelistedUUIDs, forService: service as CBService)
         }
     }
     
@@ -170,7 +229,7 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
         if error != nil {
             NSLog("Had an error while trying to read value on characteristic %@", error)
         } else {
-            NSLog("Read value on characteristic %@", characterstic)
+            NSLog("Read value on characteristic %@", characteristic)
         }
     }
 }

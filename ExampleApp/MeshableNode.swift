@@ -15,6 +15,8 @@ class MeshableNode: MeshableDevice {
         if appUUID != nil {
             applicationUUID = appUUID
         }
+        
+        super.init()
     }
     
     func startDiscovery() {
