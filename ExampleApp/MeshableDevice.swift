@@ -8,8 +8,15 @@
 
 import CoreBluetooth
 
+protocol MeshableDeviceDelegate {
+    func bluetoothReady()
+    
+    func bluetoothNotReady(reason: String, bluetoothState: CBCentralManagerState)
+}
+
 class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
     var central: CBCentralManager
+    var delegate: MeshableDeviceDelegate?
     
     override init() {
         super.init()
@@ -26,23 +33,22 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
         switch central.state {
             
         case .PoweredOff:
-            println("CoreBluetooth BLE hardware is powered off")
+            delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is powered off", bluetoothState: .PoweredOff)
             break
         case .PoweredOn:
-            println("CoreBluetooth BLE hardware is powered on and ready")
-            // TODO: notify delegate we are reaaaaady
+            delegate?.bluetoothReady()
             break
         case .Resetting:
-            println("CoreBluetooth BLE hardware is resetting")
+            delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is resetting", bluetoothState: .Resetting)
             break
         case .Unauthorized:
-            println("CoreBluetooth BLE state is unauthorized")
+            delegate?.bluetoothNotReady("CoreBluetooth BLE state is unauthorized", bluetoothState: .Unauthorized)
             break
         case .Unknown:
-            println("CoreBluetooth BLE state is unknown")
+            delegate?.bluetoothNotReady("CoreBluetooth BLE state is unknown", bluetoothState: .Unknown)
             break
         case .Unsupported:
-            println("CoreBluetooth BLE hardware is unsupported on this platform")
+            delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is unsupported on this platform", bluetoothState: .Unsupported)
             break
             
         default:
