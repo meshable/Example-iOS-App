@@ -1,69 +1,23 @@
 //
-//  ViewController.swift
+//  MeshableDevice.swift
 //  ExampleApp
 //
-//  Created by George Shank on 11/4/14.
+//  Created by George Shank on 11/11/14.
 //  Copyright (c) 2014 Meshable. All rights reserved.
 //
 
-import UIKit
 import CoreBluetooth
 
-
-class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
-    var central = CBCentralManager()
-    var peripheral = CBPeripheralManager()
-    var characterstic = CBMutableCharacteristic()
-    var service = CBMutableService()
-    var discoveredPeripheral = [CBPeripheral]()
-    let uuid = CBUUID(string: "CF4A6676-F75D-47F0-861C-767CFBE35466")
+class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
+    var central: CBCentralManager
     
-    
-    @IBOutlet var messageInputField: UITextField!
-    @IBOutlet var messageDisplay: UILabel!
-    
-    @IBAction func sendMessageButton() {
-        sendMessage(messageInputField.text)
-        
-    }
-    
-    func sendMessage(incomingMessage: String?) {
-        var message = "No message to send"
-        
-        if let maybeMessage = incomingMessage {
-            if maybeMessage.utf16Count > 0 {
-                message = maybeMessage
-            }
-        }
-        
-        messageDisplay.text = message
-        var messageBuffer = message.dataUsingEncoding(NSUTF8StringEncoding)
-        characterstic.value = messageBuffer
-        peripheral.updateValue(messageBuffer, forCharacteristic: characterstic, onSubscribedCentrals: nil)
-        
-    }
-    
-    func textFieldShouldReturn(textField: UITextField) -> Bool {
-        sendMessage(textField.text)
-        return true
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        
-        central = CBCentralManager(delegate: self, queue: nil)
-        peripheral = CBPeripheralManager(delegate: self, queue: nil)
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    override init() {
+        super.init()
     }
     
     // MARK: Central Manager
-    func startScanning() {
-        central.scanForPeripheralsWithServices([uuid], options: nil)
+    func startScanning(uuids: [CBUUID]) {
+        central.scanForPeripheralsWithServices(uuids, options: nil)
     }
     
     // MARK: Central Manager Delegate
@@ -76,7 +30,7 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
             break
         case .PoweredOn:
             println("CoreBluetooth BLE hardware is powered on and ready")
-            self.startScanning()
+            // TODO: notify delegate we are reaaaaady
             break
         case .Resetting:
             println("CoreBluetooth BLE hardware is resetting")
@@ -106,8 +60,8 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
         //Seems we need to retain the discovered peripheral to successfully connect to it
         self.discoveredPeripheral.append(peripheral)
         
-//        central.connectPeripheral(peripheral, options: nil)
-//        println("Attempting to cnnect to peripheral")
+        //        central.connectPeripheral(peripheral, options: nil)
+        //        println("Attempting to cnnect to peripheral")
     }
     
     func centralManager(central: CBCentralManager!, didConnectPeripheral peripheral: CBPeripheral!) {
@@ -129,7 +83,7 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
         service.characteristics = [characterstic]
         
         peripheral.addService(service)
-
+        
         peripheral.startAdvertising([CBAdvertisementDataServiceUUIDsKey : [service.UUID]])
     }
     
@@ -167,7 +121,7 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
         default:
             break
         }
-
+        
     }
     
     func peripheralManager(peripheral: CBPeripheralManager!, didAddService service: CBService!, error: NSError!) {
@@ -214,4 +168,3 @@ class ViewController: UIViewController, UITextFieldDelegate, CBCentralManagerDel
         }
     }
 }
-
