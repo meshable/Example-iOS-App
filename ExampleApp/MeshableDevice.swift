@@ -8,44 +8,45 @@
 
 import CoreBluetooth
 
+enum MeshableDeviceBluetoothState: Int {
+    case PoweredOff
+    case PoweredOn
+    case Resetting
+    case Unauthorized
+    case Unknown
+    case Unsupported
+}
+
 protocol MeshableDeviceDelegate {
+    func meshableDevice(device: MeshableDevice, didDiscoverPeripheral discoveredPeripheral: CBPeripheral)
+    func meshableDevice(device: MeshableDevice, didConnectToPeripheral connectedPeripheral: CBPeripheral)
     func bluetoothReady()
-    
-    func bluetoothNotReady(reason: String, bluetoothState: CBCentralManagerState)
+    func bluetoothNotReady(reason: String, bluetoothState: MeshableDeviceBluetoothState)
 }
 
 class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDelegate, CBPeripheralDelegate {
-    var central = CBCentralManager()
-    var peripheral = CBPeripheralManager()
-    var services: [CBService] = []
-    var delegate: MeshableDeviceDelegate?
+    var central: CBCentralManager?
+    var peripheral: CBPeripheralManager?
+    var services: [CBMutableService] = []
     var discoveredPeripherals: [CBPeripheral] = []
     var whitelistedUUIDs: [CBUUID] = []
+    var state: MeshableDeviceBluetoothState = MeshableDeviceBluetoothState.Unknown
+    var delegate: MeshableDeviceDelegate?
     
-    // TODO: meshable json data needs to be sent in by init
-    let jsonDictionary = [
-        "services": [[
-            "UUID": "CF4A6676-F75D-47F0-861C-767CFBE35466",
-            "meshableType": "MeshableNodeService",
-            "meshableDescription": "Encapsulating service to hold Mesh and Application characteristics",
-            "characteristics": [[
-                "UUID": "8D919FA1-5A2B-49AD-A617-F9BE246AAFAC",
-                "meshableType": "MeshId",
-                "meshableDescription": "ID of the mesh network this node belongs to, if any"
-                ], [
-                    "UUID": "27B041F2-2E81-44B9-A096-1A6ECB8A49B1",
-                    "meshableType": "Id",
-                    "meshableDescription": "128-bit id for this node in the network"
-                ], [
-                    "UUID": "2237D243-8105-4390-89CB-2C3B9986CD76",
-                    "meshableType": "Pipe",
-                    "meshableDescription": "Interface for reading/writing data to a node"
-                ]]
-            ]]
-    ]
+        
+    init(jsonConfig: NSDictionary?, delegate: MeshableDeviceDelegate?) {
+        super.init()
+        self.delegate = delegate
+        
+        if let config = jsonConfig {
+            services = parseMeshableConfig(config)
+        }
+    }
     
-    override init() {
-        if let jsonServices = jsonDictionary["services"] {
+    func parseMeshableConfig(config: NSDictionary) -> [CBMutableService] {
+        var parsedServices: [CBMutableService] = []
+        
+        if let jsonServices = config["services"] as? NSArray {
             for jsonService in jsonServices {
                 let serviceUUID = CBUUID(string: jsonService["UUID"] as String)
                 let service = CBMutableService(type: serviceUUID, primary: true)
@@ -60,16 +61,79 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
                 }
                 
                 service.characteristics = characteristics
-                self.services.append(service)
+                parsedServices.append(service)
             }
         }
         
-        super.init()
-        
+        return parsedServices
     }
     
-    func addCharacteristic(uuid: CBUUID, withValue value: AnyObject) {
-
+    func updateState(centralState: CBCentralManagerState?, peripheralState: CBPeripheralManagerState?) {
+        var state: Int = MeshableDeviceBluetoothState.Unknown.rawValue
+        
+        if let maybeState = centralState {
+            state = maybeState.rawValue
+        } else if let maybeState = peripheralState {
+            state = maybeState.rawValue
+        }
+        
+        switch state {
+        case CBCentralManagerState.PoweredOff.rawValue:
+            fallthrough
+        case CBPeripheralManagerState.PoweredOff.rawValue:
+            if self.state != MeshableDeviceBluetoothState.PoweredOff {
+                self.state = MeshableDeviceBluetoothState.PoweredOff
+                delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is powered off", bluetoothState: MeshableDeviceBluetoothState.PoweredOff)
+            }
+            break
+        case CBCentralManagerState.PoweredOn.rawValue:
+            fallthrough
+        case CBPeripheralManagerState.PoweredOn.rawValue:
+            if self.state != MeshableDeviceBluetoothState.PoweredOn {
+                self.state = MeshableDeviceBluetoothState.PoweredOn
+                delegate?.bluetoothReady()
+            }
+            break
+        case CBCentralManagerState.Resetting.rawValue:
+            fallthrough
+        case CBPeripheralManagerState.Resetting.rawValue:
+            if self.state != MeshableDeviceBluetoothState.Resetting {
+                self.state = MeshableDeviceBluetoothState.Resetting
+                delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is resetting", bluetoothState: MeshableDeviceBluetoothState.Resetting)
+            }
+            break
+        case CBCentralManagerState.Unauthorized.rawValue:
+            fallthrough
+        case CBPeripheralManagerState.Unauthorized.rawValue:
+            if self.state != MeshableDeviceBluetoothState.Unauthorized {
+                self.state = MeshableDeviceBluetoothState.Unauthorized
+                delegate?.bluetoothNotReady("CoreBluetooth BLE state is unauthorized", bluetoothState: MeshableDeviceBluetoothState.Unauthorized)
+            }
+            break
+        case CBCentralManagerState.Unknown.rawValue:
+            fallthrough
+        case CBPeripheralManagerState.Unknown.rawValue:
+            if self.state != MeshableDeviceBluetoothState.Unknown {
+                self.state = MeshableDeviceBluetoothState.Unknown
+                delegate?.bluetoothNotReady("CoreBluetooth BLE state is unknown", bluetoothState: MeshableDeviceBluetoothState.Unknown)
+            }
+            break
+        case CBCentralManagerState.Unsupported.rawValue:
+            fallthrough
+        case CBPeripheralManagerState.Unsupported.rawValue:
+            if self.state != MeshableDeviceBluetoothState.Unsupported {
+                self.state = MeshableDeviceBluetoothState.Unsupported
+                delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is unsupported on this platform", bluetoothState: MeshableDeviceBluetoothState.Unsupported)
+            }
+            break
+            
+        default:
+            break
+        }
+    }
+    
+    func connectToPeripheral(peripheral: CBPeripheral, lookingForServiceUUIDs serviceUUIDs: [CBUUID], andCharacteristicUUIDs characteristicUUIDs: [CBUUID]?) {
+        central?.connectPeripheral(peripheral, options: nil)
     }
     
     // MARK: Central Manager
@@ -78,39 +142,21 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
             self.whitelistedUUIDs = maybeUUIDs
         }
         
-        central = CBCentralManager(delegate: self, queue: nil)
-        peripheral = CBPeripheralManager(delegate: self, queue: nil)
+        if central == nil {
+            central = CBCentralManager(delegate: self, queue: nil)
+        }
         
-        central.scanForPeripheralsWithServices(self.whitelistedUUIDs, options: nil)
+        central!.scanForPeripheralsWithServices(self.whitelistedUUIDs, options: nil)
+    }
+    
+    func stopScanning() {
+        central!.stopScan()
     }
     
     // MARK: Central Manager Delegate
     
     func centralManagerDidUpdateState(central: CBCentralManager!) {
-        switch central.state {
-            
-        case .PoweredOff:
-            delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is powered off", bluetoothState: .PoweredOff)
-            break
-        case .PoweredOn:
-            delegate?.bluetoothReady()
-            break
-        case .Resetting:
-            delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is resetting", bluetoothState: .Resetting)
-            break
-        case .Unauthorized:
-            delegate?.bluetoothNotReady("CoreBluetooth BLE state is unauthorized", bluetoothState: .Unauthorized)
-            break
-        case .Unknown:
-            delegate?.bluetoothNotReady("CoreBluetooth BLE state is unknown", bluetoothState: .Unknown)
-            break
-        case .Unsupported:
-            delegate?.bluetoothNotReady("CoreBluetooth BLE hardware is unsupported on this platform", bluetoothState: .Unsupported)
-            break
-            
-        default:
-            break
-        }
+        updateState(central.state, peripheralState: nil)
     }
     
     func centralManager(central: CBCentralManager!, willRestoreState dict: [NSObject : AnyObject]!) {
@@ -138,8 +184,16 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
     }
     
     // MARK: Peripheral Manager
-    func startAdvertising() {
-        peripheral.startAdvertising([CBAdvertisementDataServiceUUIDsKey : services.map({ $0.UUID })])
+    func startAdvertising(uuids: [CBUUID]?) {
+        if peripheral == nil {
+            peripheral = CBPeripheralManager(delegate: self, queue: nil)
+        }
+        
+        peripheral!.startAdvertising([CBAdvertisementDataServiceUUIDsKey : services.map({ $0.UUID })])
+    }
+    
+    func stopAdvertising() {
+        peripheral!.stopAdvertising()
     }
     
     // MARK: Peripheral Manager Delegate
@@ -151,32 +205,7 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
         }
     }
     func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager!) {
-        switch peripheral.state {
-            
-        case .PoweredOff:
-            println("CoreBluetooth BLE hardware is powered off")
-            break
-        case .PoweredOn:
-            println("CoreBluetooth BLE hardware is powered on and ready")
-            self.startAdvertising()
-            break
-        case .Resetting:
-            println("CoreBluetooth BLE hardware is resetting")
-            break
-        case .Unauthorized:
-            println("CoreBluetooth BLE state is unauthorized")
-            break
-        case .Unknown:
-            println("CoreBluetooth BLE state is unknown")
-            break
-        case .Unsupported:
-            println("CoreBluetooth BLE hardware is unsupported on this platform")
-            break
-            
-        default:
-            break
-        }
-        
+        updateState(nil, peripheralState: peripheral.state)
     }
     
     func peripheralManager(peripheral: CBPeripheralManager!, didAddService service: CBService!, error: NSError!) {
