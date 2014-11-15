@@ -19,7 +19,7 @@ enum MeshableDeviceBluetoothState: Int {
 
 protocol MeshableDeviceDelegate {
     func meshableDevice(device: MeshableDevice, didDiscoverPeripheral discoveredPeripheral: CBPeripheral)
-    func meshableDevice(device: MeshableDevice, didConnectToPeripheral connectedPeripheral: CBPeripheral)
+    func meshableDevice(device: MeshableDevice, didConnectToPeripheral connectedPeripheral: CBPeripheral, withMeshId meshId: Int?)
     func bluetoothReady()
     func bluetoothNotReady(reason: String, bluetoothState: MeshableDeviceBluetoothState)
 }
@@ -41,6 +41,8 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
         if let config = jsonConfig {
             services = parseMeshableConfig(config)
         }
+        peripheral = CBPeripheralManager(delegate: self, queue: nil)
+        central = CBCentralManager(delegate: self, queue: nil)
     }
     
     func parseMeshableConfig(config: NSDictionary) -> [CBMutableService] {
@@ -184,12 +186,27 @@ class MeshableDevice: NSObject, CBCentralManagerDelegate, CBPeripheralManagerDel
     }
     
     // MARK: Peripheral Manager
-    func startAdvertising(uuids: [CBUUID]?) {
-        if peripheral == nil {
-            peripheral = CBPeripheralManager(delegate: self, queue: nil)
+    func startAdvertising(uuids: [CBUUID]?, counter: Int?) {
+        peripheral!.startAdvertising([CBAdvertisementDataServiceUUIDsKey : services.map({ $0.UUID })])
+        
+        //The first call to start advertising doesn't work, keep attempting until we are advertising
+        var delta: Int64 = 1 * Int64(NSEC_PER_SEC)
+        var time = dispatch_time(DISPATCH_TIME_NOW, delta)
+        var attemptCounter: Int = 3
+        
+        if let maybeCounter = counter {
+            if maybeCounter <= 0 {
+                return
+            } else {
+                attemptCounter = maybeCounter - 1
+            }
         }
         
-        peripheral!.startAdvertising([CBAdvertisementDataServiceUUIDsKey : services.map({ $0.UUID })])
+        dispatch_after(time, dispatch_get_main_queue(), {
+            if !self.peripheral!.isAdvertising {
+                self.startAdvertising(uuids, counter: attemptCounter)
+            }
+        });
     }
     
     func stopAdvertising() {

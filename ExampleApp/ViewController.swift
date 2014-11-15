@@ -16,7 +16,6 @@ class ViewController: UIViewController, UITextFieldDelegate, MeshableNodeDelegat
     
     @IBAction func sendMessageButton() {
         sendMessage(messageInputField.text)
-        
     }
     
     func sendMessage(incomingMessage: String?) {

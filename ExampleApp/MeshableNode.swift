@@ -17,7 +17,7 @@ struct MeshableConstants {
 }
 
 class MeshableNode: MeshableDeviceDelegate {
-    var readyToStartDiscovery = false
+    var bluetoothOn = false
     var currentlyDiscovering = false
     var delegate: MeshableNodeDelegate
     var device = MeshableDevice(jsonConfig: nil, delegate: nil)
@@ -53,9 +53,17 @@ class MeshableNode: MeshableDeviceDelegate {
     }
     
     func startDiscovery() {
+        currentlyDiscovering = true
+        
+        if bluetoothOn {
+            startScanningAndAdvertising()
+        }
+    }
+    
+    private func startScanningAndAdvertising() {
+        println("I'm gonna start scanning and advertising")
         var scanUUIDs: [CBUUID] = []
         var advertiseUUIDs: [CBUUID] = [MeshableConstants.MESHABLE_UUID]
-        
         
         if meshId != nil {
             //Only look for meshed nodes
@@ -68,13 +76,18 @@ class MeshableNode: MeshableDeviceDelegate {
         }
         
         device.startScanning(scanUUIDs)
-        device.startAdvertising(advertiseUUIDs)
+        device.startAdvertising(advertiseUUIDs, counter: nil)
     }
     
     func stopDiscovery() {
+        currentlyDiscovering = false
         //Stop looking for nodes to connect to and stop advertising
         //This breaks existing connections with other nodes
         //Communicates tear down to the network
+        stopScanningAndAdvertising()
+    }
+    
+    private func stopScanningAndAdvertising() {
         device.stopScanning()
         device.stopAdvertising()
     }
@@ -99,12 +112,22 @@ class MeshableNode: MeshableDeviceDelegate {
     //MARK: MeshableDeviceDelegate functions
     
     func bluetoothReady() {
-        readyToStartDiscovery = true
+        bluetoothOn = true
+        if currentlyDiscovering {
+            startScanningAndAdvertising()
+        }
     }
     
     func bluetoothNotReady(reason: String, bluetoothState: MeshableDeviceBluetoothState) {
-        readyToStartDiscovery = false
+        bluetoothOn = false
+        if currentlyDiscovering {
+            stopScanningAndAdvertising()
+        }
         delegate.meshableNode(self, unableToStartDiscovery: reason)
+    }
+    
+    func meshableDevice(device: MeshableDevice, didDiscoverPeripheral discoveredPeripheral: CBPeripheral) {
+        device.connectToPeripheral(discoveredPeripheral, lookingForServiceUUIDs: [MeshableConstants.MESHABLE_UUID], andCharacteristicUUIDs: [MeshableConstants.MESHABLE_CHARACTERISTIC_MESH_ID_UUID, MeshableConstants.MESHABLE_CHARACTERISTIC_ID_UUID, MeshableConstants.MESHABLE_CHARACTERISTIC_PIPE_UUID])
     }
     
     func meshableDevice(device: MeshableDevice, didConnectToPeripheral connectedPeripheral: CBPeripheral, withMeshId meshId: Int?) {
@@ -113,11 +136,6 @@ class MeshableNode: MeshableDeviceDelegate {
         }
         connectedPeripherals.append(connectedPeripheral)
     }
-    
-    func meshableDevice(device: MeshableDevice, didDiscoverPeripheral discoveredPeripheral: CBPeripheral) {
-        device.connectToPeripheral(discoveredPeripheral, lookingForServiceUUIDs: [MeshableConstants.MESHABLE_UUID], andCharacteristicUUIDs: [MeshableConstants.MESHABLE_CHARACTERISTIC_MESH_ID_UUID, MeshableConstants.MESHABLE_CHARACTERISTIC_ID_UUID, MeshableConstants.MESHABLE_CHARACTERISTIC_PIPE_UUID])
-    }
-    
 }
 
 protocol MeshableNodeDelegate {
