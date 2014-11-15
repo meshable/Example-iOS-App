@@ -1,0 +1,20 @@
+{
+    "services": [{
+                 "UUID": "CF4A6676-F75D-47F0-861C-767CFBE35466",
+                 "meshableType": "MeshableNodeService",
+                 "meshableDescription": "Encapsulating service to hold Mesh and Application characteristics"
+                 "characteristics": [{
+                                     "UUID": "8D919FA1-5A2B-49AD-A617-F9BE246AAFAC",
+                                     "meshableType": "MeshId",
+                                     "meshableDescription": "ID of the mesh network this node belongs to, if any"
+                                     }, {
+                                     "UUID": "27B041F2-2E81-44B9-A096-1A6ECB8A49B1",
+                                     "meshableType": "Id",
+                                     "meshableDescription": "128-bit id for this node in the network"
+                                     }, {
+                                     "UUID": "2237D243-8105-4390-89CB-2C3B9986CD76",
+                                     "meshableType": "Pipe",
+                                     "meshableDescription": "Interface for reading/writing data to a node"
+                                     }]
+                 }]
+}

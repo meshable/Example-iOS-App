@@ -7,12 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DA4A6EAB1A132699006A57DE /* meshable.json in Resources */ = {isa = PBXBuildFile; fileRef = DA4A6EAA1A132699006A57DE /* meshable.json */; };
 		DAAE3F641A097C2E0033C82B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAE3F631A097C2E0033C82B /* AppDelegate.swift */; };
 		DAAE3F661A097C2E0033C82B /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAE3F651A097C2E0033C82B /* ViewController.swift */; };
 		DAAE3F691A097C2E0033C82B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DAAE3F671A097C2E0033C82B /* Main.storyboard */; };
 		DAAE3F6B1A097C2E0033C82B /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DAAE3F6A1A097C2E0033C82B /* Images.xcassets */; };
 		DAAE3F6E1A097C2E0033C82B /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = DAAE3F6C1A097C2E0033C82B /* LaunchScreen.xib */; };
 		DAAE3F7A1A097C2E0033C82B /* ExampleAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAAE3F791A097C2E0033C82B /* ExampleAppTests.swift */; };
+		DAF74AA91A12D2C900B7FDF4 /* MeshableNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF74AA81A12D2C900B7FDF4 /* MeshableNode.swift */; };
+		DAF74AAB1A12DE9800B7FDF4 /* MeshableDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF74AAA1A12DE9800B7FDF4 /* MeshableDevice.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		DA4A6EAA1A132699006A57DE /* meshable.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = meshable.json; sourceTree = "<group>"; };
 		DAAE3F5E1A097C2E0033C82B /* ExampleApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExampleApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DAAE3F621A097C2E0033C82B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DAAE3F631A097C2E0033C82B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -36,6 +40,8 @@
 		DAAE3F731A097C2E0033C82B /* ExampleAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ExampleAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DAAE3F781A097C2E0033C82B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		DAAE3F791A097C2E0033C82B /* ExampleAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExampleAppTests.swift; sourceTree = "<group>"; };
+		DAF74AA81A12D2C900B7FDF4 /* MeshableNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MeshableNode.swift; sourceTree = "<group>"; };
+		DAF74AAA1A12DE9800B7FDF4 /* MeshableDevice.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MeshableDevice.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +85,9 @@
 			children = (
 				DAAE3F631A097C2E0033C82B /* AppDelegate.swift */,
 				DAAE3F651A097C2E0033C82B /* ViewController.swift */,
+				DAF74AA81A12D2C900B7FDF4 /* MeshableNode.swift */,
+				DAF74AAA1A12DE9800B7FDF4 /* MeshableDevice.swift */,
+				DA4A6EAA1A132699006A57DE /* meshable.json */,
 				DAAE3F671A097C2E0033C82B /* Main.storyboard */,
 				DAAE3F6A1A097C2E0033C82B /* Images.xcassets */,
 				DAAE3F6C1A097C2E0033C82B /* LaunchScreen.xib */,
@@ -195,6 +204,7 @@
 			files = (
 				DAAE3F691A097C2E0033C82B /* Main.storyboard in Resources */,
 				DAAE3F6E1A097C2E0033C82B /* LaunchScreen.xib in Resources */,
+				DA4A6EAB1A132699006A57DE /* meshable.json in Resources */,
 				DAAE3F6B1A097C2E0033C82B /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -213,8 +223,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DAF74AAB1A12DE9800B7FDF4 /* MeshableDevice.swift in Sources */,
 				DAAE3F661A097C2E0033C82B /* ViewController.swift in Sources */,
 				DAAE3F641A097C2E0033C82B /* AppDelegate.swift in Sources */,
+				DAF74AA91A12D2C900B7FDF4 /* MeshableNode.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
